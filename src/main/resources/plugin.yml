@@ -1,0 +1,6 @@
+name: Zona51
+version: '${project.version}'
+main: ru.skyscx.minigames.Zona
+prefix: ZONA
+authors: [ Skyscx ]
+description: MiniGame - Zona51
