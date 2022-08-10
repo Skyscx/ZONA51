@@ -23,19 +23,19 @@ object messages {
     var selHEROelon =
         ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Вы выбрали персонажа - " + ChatColor.WHITE + "Илон Маск"
     var selHEROarnold =
-        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Вы выбрали персонажа - " + ChatColor.WHITE + "Арнольд Швацнейгер"
+        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Вы выбрали персонажа - " + ChatColor.WHITE + "Арнольд Шварценеггер"
     var selHEROelonAbout =
         ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Илон Маск  - " + ChatColor.WHITE + "может призывать молнии."
     var selHEROarnoldAbout =
-        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Арнольд Швацнейгер - " + ChatColor.WHITE + "может кидаться камнями."
+        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Арнольд Шварценеггер - " + ChatColor.WHITE + "может кидаться камнями."
     var CTinfo =
-        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Вы выбрали персонажа - " + ChatColor.WHITE + "Ваша задача - не дать героям украть пришельца с вашей базы. "
+        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Ваша задача - " + ChatColor.WHITE + "не дать героям украть пришельца с вашей базы. "
     var HEROinfo =
-        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Вы выбрали персонажа - " + ChatColor.WHITE + "Ваша задача - украсть у спецназа пришельца и принести его в точку отправки."
+        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Ваша задача - " + ChatColor.WHITE + "украсть у спецназа пришельца и принести его в точку отправки."
     var start_game =
         ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Игра началась! Удачи."
     var lighting =
-        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Герои призывают молнию! Берегитесь"
+        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Герои призывают на спецназ молнию! Берегитесь."
     var Turn1 =
         ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Вы уже состоите в очереди!"
     var Turn2 =
@@ -44,4 +44,10 @@ object messages {
         ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Вы не успели выбрать команду, поэтому было применено автоматическое распределение."
     var PlayersAccept =
         ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Вы играете за команду {team_sel}. Ваш персонаж - {persona}"
+    var stone_sht =
+        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Герои выкидывают на спецназ камень. Берегитесь."
+    var use_Light =
+        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Ваша команда использовала молнию."
+    var use_Stone_sht =
+        ChatColor.WHITE.toString() + "[" + ChatColor.GOLD + "ZONA51" + ChatColor.WHITE + "] " + ChatColor.GRAY + "Ваша команда использовала каменный метеорит."
 }
