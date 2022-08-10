@@ -1,12 +1,12 @@
 package ru.skyscx.minigames.arena
 
+import com.google.common.eventbus.DeadEvent
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.ComponentBuilder
 import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.*
 import org.bukkit.Bukkit.*
-import org.bukkit.block.Block
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Enderman
 import org.bukkit.entity.EntityType
@@ -14,9 +14,14 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
-import org.bukkit.event.entity.EntityTargetEvent
+import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import ru.skyscx.minigames.Zona
 import ru.skyscx.minigames.other.messages
@@ -26,8 +31,6 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
     enum class ArenaStatus {
         WAIT, LIVE, LOAD
     }
-
-
     var PlayersInGame : ArrayList<Player?> = ArrayList()
     var PlayersDeath : ArrayList<Player> = ArrayList()
     var PlayersCT : ArrayList<Player> = ArrayList()
@@ -35,22 +38,26 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
     var PlayersHERO : ArrayList<Player> = ArrayList()
     var PlayersHeroEM : ArrayList<Player> = ArrayList()
     var PlayersHeroAS : ArrayList<Player> = ArrayList()
+    var PlayersLIVE : ArrayList<Player> = ArrayList()
+    var PlayersAccept : ArrayList<Player> = ArrayList()
+    var PlayersS : ArrayList<Player> = ArrayList()
+    var PlayerAndEnder: ArrayList<Player> = ArrayList()
+    var WinP: ArrayList<Player> = ArrayList()
+
     var GameStatus : ArenaStatus = ArenaStatus.WAIT
     var SpawnLocationCT : ArrayList<Location> = ArrayList()
     var SpawnLocationHERO : ArrayList<Location> = ArrayList()
     var SpawnLocationEnder : ArrayList<Location> = ArrayList()
     var SpawnLocationALL : ArrayList<Location> = ArrayList()
-    var PlayersLIVE : ArrayList<Player> = ArrayList()
-    var PlayersAccept : ArrayList<Player> = ArrayList()
-    var PlayersS : ArrayList<Player> = ArrayList()
     var sizeAll: Int = 2 // Сколько игроков нужно для игры
     var MinP: Int = 1
+    val LocEnderEnd = Location(getWorld("world"), -263.0, 107.0, 266.0)
     var sizeCT: Int = SpawnLocationCT.size
     var sizeHERO: Int = SpawnLocationHERO.size
     var name = nameA
-
-    val startTime = 1200
-
+    val startTime = 60
+    val GameTime = 600
+    var CheckBlockEnd = 0
     fun AddPlayer(player: Player?) : Boolean {
         if (GameStatus != ArenaStatus.WAIT) return false
         PlayersInGame.add(player)
@@ -67,18 +74,13 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
         for ((i, player) in PlayersInGame.withIndex()){
             player?.teleport(SpawnLocationALL[i])
             player?.gameMode = GameMode.ADVENTURE
-
             player?.inventory?.clear()
-
-            /*Выбор команды - реализовать*/
-            val invSelTeam = Bukkit.createInventory(null, 9, ChatColor.BOLD.toString() + "Выбор команды")
-            //ct
+            val invSelTeam = createInventory(null, 9, ChatColor.BOLD.toString() + "Выбор команды")
             val ct = ItemStack(Material.LAPIS_BLOCK)
             val meta_ct = ct.itemMeta
             meta_ct.displayName = "СПЕЦНАЗ"
             ct.itemMeta = meta_ct
             invSelTeam.addItem(ct)
-            //hero
             val hero = ItemStack(Material.GOLD_BLOCK)
             val meta_hero = hero.itemMeta
             meta_hero.displayName = "ГЕРОИ"
@@ -91,14 +93,12 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
     fun TypeHeroSelect(){
         /*Выбор персонажа - реализовать*/
         for ((i, player) in PlayersHERO.withIndex()){
-            val invSelPers = Bukkit.createInventory(null, 9, ChatColor.BOLD.toString() + "Выбор персонажа")
-
+            val invSelPers = createInventory(null, 9, ChatColor.BOLD.toString() + "Выбор персонажа")
             val em = ItemStack(Material.BLAZE_ROD)
             val meta2 = em.itemMeta
             meta2.displayName = "Илон Маск"
             em.itemMeta = meta2
             invSelPers.addItem(em)
-
             val h_as = ItemStack(Material.STONE)
             val meta3 = h_as.itemMeta
             meta3.displayName = "Арнольд Шварценеггер"
@@ -106,17 +106,13 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
             invSelPers.addItem(h_as)
             player.openInventory(invSelPers)
         }
-
     }
-
     fun startGame(){
         normal_dif()
         GameStatus = ArenaStatus.LIVE
-        //ТУТ реализовать для кт спавн и киты
         sendCTMessage(messages.CTinfo)
         sendHEROessage(messages.HEROinfo)
-
-
+        dispatchCommand(getConsoleSender(), "gamerule keepInventory true");
         for ((i, player) in PlayersCT.withIndex()){
             PlayersLIVE.add(player)
             player.teleport(SpawnLocationCT[i])
@@ -171,8 +167,6 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
             player.sendMessage(messages.start_game)
             sendHEROTitle("§eИгра началась!","§сУкрадите пришельца любым способом!" )
             player.inventory?.clear()
-
-            //Тут выдача оружия
             //Кирка
             val pickaxe = ItemStack(Material.DIAMOND_PICKAXE)
             val meta_pickaxe = pickaxe.itemMeta
@@ -180,14 +174,12 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
             pickaxe.itemMeta = meta_pickaxe
             pickaxe.addEnchantment(Enchantment.DIG_SPEED, 5)
             player.inventory?.setItem(0, pickaxe)
-
             //Меч
             val sword = ItemStack(Material.GOLD_SWORD)
             val meta_sword = sword.itemMeta
             meta_sword.displayName = "Заточка"
             sword.itemMeta = meta_sword
             player.inventory?.setItem(1, sword)
-
             //Лук
             val BOW = ItemStack(Material.BOW)
             val meta_BOW = BOW.itemMeta
@@ -247,19 +239,23 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
             }
         }
         CreateEnderman()
+        GAMEtimer()
     }
     fun CreateEnderman(){
         val world = getServer().getWorld("world")
         val loc = SpawnLocationEnder[0]
         val ender = EntityType.ENDERMAN
-        world.spawnEntity(loc, ender) as Enderman
+
+        val entity = world.spawnEntity(loc, ender) as Enderman
+        entity.setAI(false)
 
     }
-    fun teamWinCT(player: Player?){
+
+    fun teamWinCT(){
         sendArenaTitle("Спецназ победил!", " ")
         //Тут чот тоже можно приудмать
     }
-    fun teamWinHERO(player: Player?){
+    fun teamWinHERO(){
         sendArenaTitle("Команда героев поебедила!", " ")
         //Тут чот тоже можно приудмать
     }
@@ -267,29 +263,32 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
     fun teamLoss(player: Player?){
 
     }
-    fun playerLose(player: Player) {
-        player.gameMode = GameMode.SPECTATOR
-        sendArenaTitle("Вы умерли"," " )//тут можно реализовать статистику
-        PlayersDeath.add(player)
-        PlayersLIVE.remove(player)
 
-        //Тут добавить - смотреть игру или покинуть или начать новую
+    fun gameEnd(){
+        dispatchCommand(getConsoleSender(), "gamerule keepInventory true");
 
-        player.spigot().sendMessage()
-            ComponentBuilder("Покинуть игру")
-                .event(ClickEvent(ClickEvent.Action.RUN_COMMAND, "/lobby"))
-                .event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("*Покинуть игру*")))
-                .create()
-
-
-        val invSelTeam = Bukkit.createInventory(null, 9, ChatColor.BOLD.toString() + "Меню действий")
-        //  если покинет - PlayersInGame.remove(player)
-        /**
-         * if (CheckGame()){
-        gameEND()
+        sendArenaMessage("GAME OVER. THX")
+        for(player in PlayersCT){
+            SelectLobby(player)
         }
-         */
+        for(player in PlayersHERO){
+            SelectLobby(player)
+        }
+        PlayersInGame = ArrayList()
+        PlayersDeath = ArrayList()
+        PlayersCT = ArrayList()
+        PlayersCTpers1 = ArrayList()
+        PlayersHERO = ArrayList()
+        PlayersHeroEM = ArrayList()
+        PlayersHeroAS = ArrayList()
+        PlayersLIVE = ArrayList()
+        PlayersAccept = ArrayList()
+        PlayersS = ArrayList()
+        PlayerAndEnder = ArrayList()
+        WinP = ArrayList()
 
+        peaceful_dif()
+        GameStatus = ArenaStatus.WAIT
     }
     fun sendArenaMessage(msg: String){
         for ((i, player) in PlayersInGame.withIndex()){
@@ -326,25 +325,31 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
             world.difficulty = Difficulty.NORMAL
         }
     }
+
     fun sendArenaTitle(msg: String, subMsg: String){
         for ((i, player) in PlayersInGame.withIndex()){
             player?.sendTitle(msg, subMsg, 40, 20, 10)
         }
     }
     fun addSpawnLocLOAD(x: Double, y: Double, z: Double, move1: Float = 0f, move2: Float = 0f){
-        SpawnLocationALL.add(Location(Bukkit.getWorld("world"), x, y, z, move1, move2))
-        sizeAll = 2
+        SpawnLocationALL.add(Location(getWorld("world"), x, y, z, move1, move2))
+
     }
-    fun addSpawnLocEnder(x: Double, y: Double, z: Double, move1: Float = 0f, move2: Float = 0f){
-        SpawnLocationEnder.add(Location(Bukkit.getWorld("world"), x, y, z, move1, move2))
-        sizeAll = 2
+    fun addSpawnLocEnder(x: Double, y: Double, z: Double){
+        SpawnLocationEnder.add(Location(getWorld("world"), x, y, z))
+    }
+    fun delSpawnLocEnder(){
+        SpawnLocationEnder.removeAt(0)
+    }
+    fun updateSpawnLocEnder(x: Int, y: Int, z: Int){
+        SpawnLocationEnder.add(Location(getWorld("world"), x.toDouble(), y.toDouble(), z.toDouble()))
     }
     fun addSpawnLocCT(x: Double, y: Double, z: Double, move1: Float = 0f, move2: Float = 0f){
-        SpawnLocationCT.add(Location(Bukkit.getWorld("world"), x, y, z, move1, move2))
+        SpawnLocationCT.add(Location(getWorld("world"), x, y, z, move1, move2))
         sizeCT = SpawnLocationCT.size
     }
     fun addSpawnLocHERO(x: Double, y: Double, z: Double, move1: Float = 0f, move2: Float = 0f){
-        SpawnLocationHERO.add(Location(Bukkit.getWorld("world"), x, y, z, move1, move2))
+        SpawnLocationHERO.add(Location(getWorld("world"), x, y, z, move1, move2))
         sizeHERO = SpawnLocationHERO.size
     }
     private fun SelectLobby(player: Player?){
@@ -355,11 +360,63 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
         //Сделать выбор игры через инвентарь
 
     }
+    private fun GAMEtimer(){
+        val gameTimer: Thread = object : Thread() {
+            override fun run() {
+                var ctr: Int = GameTime
+                while (ctr > 0) {
+                    object : BukkitRunnable() {
+                        override fun run() {
+                            if (CheckBlockEnd ==1){
 
+                                val player = WinP[0]
+
+                                normal_dif()
+                                PlayerAndEnder.remove(player)
+
+                                val l = player.location
+                                val x = l.blockX
+                                val y = l.blockY
+                                val z = l.blockZ
+                                updateSpawnLocEnder(x,y,z)
+                                CreateEnderman()
+
+                                val HELMET = ItemStack(Material.GOLD_HELMET)
+                                val meta_HELMET = HELMET.itemMeta
+                                meta_HELMET.displayName = "Шлем героя"
+                                HELMET.itemMeta = meta_HELMET
+                                player.inventory.helmet = HELMET
+
+                                player.removePotionEffect(PotionEffectType.SLOW)
+                                sendArenaMessage("${player.name} вернул пришельца на базу!")
+                                CheckBlockEnd = 0
+                                teamWinHERO()
+                                gameEnd()
+                                return
+
+                            }else{
+                                if (ctr == 1){
+                                    teamWinCT()
+                                    gameEnd()
+                                }
+                            }
+                        }
+                    }.runTask(Zona.plugin)
+                    getConsoleSender().sendMessage("1 sec")
+                    ctr -= 1
+                    try {
+                        sleep(1000)
+                    } catch (e: InterruptedException) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
+        gameTimer.start()
+    }
     private fun startTimer() {
         val thread: Thread = object : Thread() {
             override fun run() {
-                val startTime = 60 // таймер для выбора команды и перса
                 var ctr: Int = startTime
                 while (ctr > 0) {
                     object : BukkitRunnable() {
@@ -367,22 +424,17 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
                             if (PlayersAccept.size != sizeAll){
                                 if (ctr == 11) {
                                     sendArenaTitle("Игра начнётся через 10 секунд", "Выберите команду!")
-                                    //фидбек 10 сек
                                 }
                                 if (ctr == 6) {
-                                    //фидбек 5 сек
                                     sendArenaTitle("Игра начнётся через 5 секунд", "Выберите команду!")
                                 }
                                 if (ctr == 4) {
-                                    //фидбек 3 сек
                                     sendArenaTitle("Игра начнётся через 3 секунды", "Выберите команду!")
                                 }
                                 if (ctr == 3) {
-                                    //фидбек 2 сек
                                     sendArenaTitle("Игра начнётся через 2 секунды", "Выберите команду!")
                                 }
                                 if (ctr == 2) {
-                                    //фидбек 1 сек
                                     sendArenaTitle("Игра начнётся через 1 секунду", "Приготовтесь!")
                                 }
                                 if (ctr == 1) {
@@ -407,13 +459,6 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
                                                 }
                                             }
                                         }
-                                        /*
-                                        * player.teleport(SpawnLocationCT[i])
-                                        player.gameMode = GameMode.SURVIVAL
-                                        player.sendMessage(messages.start_game)
-                                        sendCTTitle("§eИгра началась!","§сНе дайте украсть пришельца!" )
-                                        player.inventory?.clear()
-                                        //Тут выдача оружия*/
                                     }
                                     startGame()
                                 }
@@ -421,7 +466,6 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
                                 startGame()
                                 ctr = 0
                             }
-
                         }
                     }.runTask(Zona.plugin)
                     getConsoleSender().sendMessage("1 sec")
@@ -436,7 +480,6 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
         }
         thread.start()
     }
-
     @EventHandler
     fun OnClick(e: InventoryClickEvent?){
         if (e!!.view.title == ChatColor.BOLD.toString() + "Выбор команды"){
@@ -473,8 +516,6 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
                     e.isCancelled = true
 
                 }
-
-
             }
         }
         //ПЕРСОНАЖ ГЕРОИ
@@ -501,7 +542,6 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
                     if (GameStatus == ArenaStatus.LOAD){
                         if (player in PlayersHeroEM){
                             PlayersHeroEM.remove(player)
-
                             getConsoleSender().sendMessage("Player  $player (HERO) unsel EM(SEL AS")
                         }
                         PlayersAccept.add(player)
@@ -511,12 +551,8 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
                     e.isCancelled = true
                     player.closeInventory()
                 }
-
-
             }
         }
-
-
         if (e.currentItem.itemMeta.displayName == "Призвать молнии") {
             val player = e.whoClicked as Player
                 if (e.action.equals(Action.RIGHT_CLICK_BLOCK) || e.action.equals(Action.RIGHT_CLICK_AIR)) {
@@ -530,7 +566,6 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
             STRIKE_P()
             }
             e.isCancelled = true
-
         if (e.currentItem.itemMeta.displayName == "Устроить шторм из камней") {
             val player = e.whoClicked as Player
             if (e.action.equals(Action.RIGHT_CLICK_BLOCK) || e.action.equals(Action.RIGHT_CLICK_AIR)) {
@@ -542,20 +577,113 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
             sendCTMessage(messages.lighting)
             sendHEROessage(messages.use_Stone_sht)
             Stone_Shtorm()
-
         }
         e.isCancelled = true
-
         }
+
 
     @EventHandler
-    fun DontAgressEnder(e: EntityTargetEvent){
-        if (!(e.entity.equals("Enderman")) ){
-            return
+    fun onPlayerMove(event: PlayerMoveEvent) {
+        val player: Player = event.player
+        if (player in PlayerAndEnder) {
+            player.addPotionEffect(PotionEffect(PotionEffectType.SLOW, 999999999, 1))
         }
-        e.isCancelled = true
+    }
+
+
+    @EventHandler
+    fun RespawnEvent(event: EntityDeathEvent) {
+        event.entity.health = 20.0
+        val p = event.entity
+        p.sendMessage("Вы возраждены!")
+        if (p in PlayersCT){
+            p.teleport(SpawnLocationCT[0])
+        }
+        if (p in PlayersHERO){
+            p.teleport(SpawnLocationHERO[0])
+        }
 
     }
+    @EventHandler
+    fun playerDamage(event: EntityDamageByEntityEvent){
+        val damager = event.damager
+        /*
+        if(damager is Player && event.entity is Player){
+            return
+        }
+        * */
+        if (damager in PlayersCT || damager in PlayersHERO){
+            val player: Player = event.entity as Player
+            if (event.entity in PlayerAndEnder){
+                normal_dif()
+                PlayerAndEnder.remove(player)
+
+                val l = player.location
+                val x = l.blockX
+                val y = l.blockY
+                val z = l.blockZ
+                updateSpawnLocEnder(x,y,z)
+                CreateEnderman()
+
+                val HELMET = ItemStack(Material.GOLD_HELMET)
+                val meta_HELMET = HELMET.itemMeta
+                meta_HELMET.displayName = "Шлем героя"
+                HELMET.itemMeta = meta_HELMET
+                player.inventory.helmet = HELMET
+
+                player.removePotionEffect(PotionEffectType.SLOW)
+                sendArenaMessage("${damager.name} скинул пришельца с ${player.name}")
+                return
+            }
+            event.isCancelled = true
+        }
+        event.isCancelled = true
+    }
+    @EventHandler
+    fun EnderDamage(event: EntityDamageByEntityEvent) {
+        val damager = event.damager
+        if(event.damager is Player && event.entity is Enderman){
+            if (damager in PlayersHERO){
+                event.isCancelled = true
+                sendArenaMessage("Игрок ${damager.name} забирает пришельца.")
+                val player: Player = event.damager as Player
+                val HELMET_DRAG = ItemStack(Material.BANNER)
+                val meta_HELMET_DRAG = HELMET_DRAG.itemMeta
+                meta_HELMET_DRAG.displayName = "Сумка с пришельцем"
+                HELMET_DRAG.itemMeta = meta_HELMET_DRAG
+                player.inventory?.helmet = HELMET_DRAG
+                PlayerAndEnder.add(player)
+                peaceful_dif()
+                delSpawnLocEnder()
+            }
+            event.isCancelled = false
+        }
+        event.isCancelled = false
+
+    }
+    @EventHandler
+    fun CheckBlockEnder(event: PlayerMoveEvent){
+        val player: Player = event.player
+
+        if (player in PlayerAndEnder){
+            val l = player.location
+            val w = getServer().getWorld("world")
+            val x = l.blockX
+            val y = l.blockY-1
+            val z = l.blockZ
+            val l2 = Location(w, x.toDouble(), y.toDouble(), z.toDouble())
+
+
+
+            if (l2 == LocEnderEnd){
+                CheckBlockEnd = 1
+                WinP.add(player)
+            }
+        }
+
+
+    }
+
     private fun Stone_Shtorm(){
         val stone_shtorm: Thread = object : Thread() {
             override fun run() {
@@ -632,7 +760,6 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
         }
         stone_shtorm.start()
     }
-
     private fun STRIKE_P() {
         val strike_thr: Thread = object : Thread() {
             override fun run() {
@@ -656,15 +783,4 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
         }
         strike_thr.start()
     }
-    //STRIKE
-
-
 }
-
-
-
-
-/*
-*   Location location = event.getLcation();
-  String playername = event.getPlayer.getName();
-  Bukkit.getPlayer(playerName).getWorld().playSound(location,Sound.BLAZE_DEATH,1, 0);*/

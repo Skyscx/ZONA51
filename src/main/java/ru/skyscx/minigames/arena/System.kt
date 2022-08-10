@@ -37,13 +37,13 @@ class System {
         return null
     }
     fun generateArenas() {
-        var arena = Arena("ARENA1", Location(Bukkit.getWorld("world"), -259.0, 107.0, 253.0), Location(Bukkit.getWorld("world"), -309.0, 107.0, 303.0))
+        var arena = Arena("ARENA1", Location(Bukkit.getWorld("world"), -260.0, 106.0, 263.0), Location(Bukkit.getWorld("world"), -265.0, 110.0, 268.0))//корды области точки куда нада привезти
         /*1 - CT*/arena.addSpawnLocCT(-304.0, 108.0, 302.0, -150f, 0f)
         /*2 - CT arena.addSpawnLocCT(-306.0, 108.0, 302.0, 30f, 0f)*/
         /*3 - CT arena.addSpawnLocCT(-308.0, 108.0, 302.0, -150f, 0f)*/
         /*4 - CT arena.addSpawnLocCT(-308.0, 108.0, 300.0, 30f, 0f)*/
         /*5 - CT arena.addSpawnLocCT(-308.0, 108.0, 298.0, -150f, 0f)*/
-        /*ENDERMAN*/ arena.addSpawnLocEnder(-306.0, 108.0, 289.0, -150f, 0f)
+        /*ENDERMAN*/ arena.addSpawnLocEnder(-306.0, 108.0, 289.0)
         /*1 - HERO*/ arena.addSpawnLocHERO(-264.0, 108.0, 254.0, -150f, 0f)
         /*2 - HERO arena.addSpawnLocHERO(-262.0, 108.0, 254.0, 30f, 0f)*/
         /*3 - HERO arena.addSpawnLocHERO(-260.0, 108.0, 254.0, -150f, 0f)*/
