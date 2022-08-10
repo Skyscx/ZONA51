@@ -5,13 +5,17 @@ import net.md_5.bungee.api.chat.ComponentBuilder
 import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.*
+import org.bukkit.Bukkit.*
 import org.bukkit.enchantments.Enchantment
+import org.bukkit.entity.Enderman
+import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.material.MaterialData
 import org.bukkit.scheduler.BukkitRunnable
 import ru.skyscx.minigames.Zona
 import ru.skyscx.minigames.other.messages
@@ -34,6 +38,7 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
     var SpawnLocationCT : ArrayList<Location> = ArrayList()
     var SpawnLocationHERO : ArrayList<Location> = ArrayList()
     var SpawnLocationEnder : ArrayList<Location> = ArrayList()
+    var EnderList : ArrayList<EntityType> = ArrayList()
     var SpawnLocationALL : ArrayList<Location> = ArrayList()
     var PlayersLIVE : ArrayList<Player> = ArrayList()
     var PlayersAccept : ArrayList<Player> = ArrayList()
@@ -68,15 +73,15 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
             val invSelTeam = Bukkit.createInventory(null, 9, ChatColor.BOLD.toString() + "Выбор команды")
             //ct
             val ct = ItemStack(Material.LAPIS_BLOCK)
-            val meta = ct.itemMeta
-            meta.displayName = "СПЕЦНАЗ"
-            ct.itemMeta = meta
+            val meta_ct = ct.itemMeta
+            meta_ct.displayName = "СПЕЦНАЗ"
+            ct.itemMeta = meta_ct
             invSelTeam.addItem(ct)
             //hero
             val hero = ItemStack(Material.GOLD_BLOCK)
-            val meta1 = hero.itemMeta
-            meta1.displayName = "ГЕРОИ"
-            hero.itemMeta = meta1
+            val meta_hero = hero.itemMeta
+            meta_hero.displayName = "ГЕРОИ"
+            hero.itemMeta = meta_hero
             invSelTeam.addItem(hero)
             player?.openInventory(invSelTeam)
         }
@@ -108,6 +113,7 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
         //ТУТ реализовать для кт спавн и киты
         sendCTMessage(messages.CTinfo)
         sendHEROessage(messages.HEROinfo)
+        CreateEnderman()
 
         for ((i, player) in PlayersCT.withIndex()){
             PlayersLIVE.add(player)
@@ -123,13 +129,13 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
             meta_pickaxe.displayName = "Бурильный аппарат"
             pickaxe.itemMeta = meta_pickaxe
             pickaxe.addEnchantment(Enchantment.DIG_SPEED, 5)
-            player?.inventory?.setItem(0, pickaxe)
+            player.inventory?.setItem(0, pickaxe)
             //Меч
             val sword = ItemStack(Material.DIAMOND_SWORD)
             val meta_sword = sword.itemMeta
             meta_sword.displayName = "Ножик из закаленной стали"
             sword.itemMeta = meta_sword
-            player?.inventory?.setItem(1, sword)
+            player.inventory?.setItem(1, sword)
 
             //БРОНЯ
             val HELMET = ItemStack(Material.DIAMOND_HELMET)
@@ -171,27 +177,23 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
             meta_pickaxe.displayName = "Арнольд Швацнейгер"
             pickaxe.itemMeta = meta_pickaxe
             pickaxe.addEnchantment(Enchantment.DIG_SPEED, 5)
-            player?.inventory?.setItem(0, pickaxe)
+            player.inventory?.setItem(0, pickaxe)
 
             //Меч
             val sword = ItemStack(Material.GOLD_SWORD)
             val meta_sword = sword.itemMeta
             meta_sword.displayName = "Заточка"
             sword.itemMeta = meta_sword
-            player?.inventory?.setItem(1, sword)
+            player.inventory?.setItem(1, sword)
 
             //Лук
             val BOW = ItemStack(Material.BOW)
             val meta_BOW = BOW.itemMeta
             meta_BOW.displayName = "Арбалет"
             BOW.itemMeta = meta_BOW
-            player?.inventory?.setItem(2, BOW)
+            player.inventory?.setItem(2, BOW)
             //Снаряды
-            val ARROW = ItemStack(Material.ARROW)
-            val meta_ARROW = ARROW.itemMeta
-            meta_ARROW.displayName = "Арбалет"
-            ARROW.itemMeta = meta_BOW
-            player?.inventory?.setItem(3, ARROW)
+            player.inventory.addItem(ItemStack(Material.ARROW, 64))
             //БРОНЯ
             val HELMET = ItemStack(Material.GOLD_HELMET)
             val meta_HELMET = HELMET.itemMeta
@@ -224,7 +226,7 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
                 val meta_BONE = BONE.itemMeta
                 meta_BONE.displayName = "Призвать молнии"
                 BONE.itemMeta = meta_BONE
-                player?.inventory?.setItem(4, BONE)
+                player.inventory?.setItem(4, BONE)
             }
             if (player in PlayersHeroAS){
                 player.sendMessage(messages.selHEROarnoldAbout)
@@ -233,7 +235,7 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
                 val meta_STONE = STONE.itemMeta
                 meta_STONE.displayName = "Кинуть камень"
                 STONE.itemMeta = meta_STONE
-                player?.inventory?.setItem(4, STONE)
+                player.inventory?.setItem(4, STONE)
             }
         }
         for((i, player) in PlayersInGame.withIndex()){
@@ -242,6 +244,13 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
 
             }
         }
+    }
+    fun CreateEnderman(){
+        val world = getServer().getWorld("world")
+        val loc = SpawnLocationEnder[0]
+        val ender = EntityType.ENDERMAN
+        world.spawnEntity(loc, ender) as Enderman
+        EnderList.add(ender)
     }
     fun teamWinCT(player: Player?){
         sendArenaTitle("Спецназ победил!", " ")
@@ -304,6 +313,14 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
             player.sendTitle(msg, subMsg, 40, 20, 10)
         }
     }
+
+    fun regenGame(){
+        val world = getServer().getWorld("world")
+        for (entity in world.entities) {
+            entity.remove()
+        }
+
+    }
     fun sendArenaTitle(msg: String, subMsg: String){
         for ((i, player) in PlayersInGame.withIndex()){
             player?.sendTitle(msg, subMsg, 40, 20, 10)
@@ -342,7 +359,7 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
                 while (ctr > 0) {
                     object : BukkitRunnable() {
                         override fun run() {
-                            if (PlayersAccept.size !== 2){
+                            if (PlayersAccept.size !== sizeAll){
                                 if (ctr == 11) {
                                     sendArenaTitle("Игра начнётся через 10 секунд", "Выберите команду!")
                                     //фидбек 10 сек
@@ -392,7 +409,7 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
                                 ctr = 0
                             }
 
-                        }//getPlugin<Zona>(Zona::class.java)
+                        }
                     }.runTask(Zona.plugin)
                     Bukkit.getConsoleSender().sendMessage("1 sec")
                     ctr -= 1
@@ -471,9 +488,10 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
                     if (GameStatus == ArenaStatus.LOAD){
                         if (player in PlayersHeroEM){
                             PlayersHeroEM.remove(player)
-                            PlayersAccept.add(player)
+
                             Bukkit.getConsoleSender().sendMessage("Player  ${player} (HERO) unsel EM(SEL AS")
                         }
+                        PlayersAccept.add(player)
                         PlayersHeroAS.add(player)
                         Bukkit.getConsoleSender().sendMessage("Player  ${player} (HERO) sel AS")
                     }
@@ -488,38 +506,61 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
 
         if (e.currentItem.itemMeta.displayName == "Призвать молнии") {
             val player = e.whoClicked as Player
-            if (e.currentItem.itemMeta.displayName == "Илон Маск") {
-                val player = e.whoClicked as Player
-
                 if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) || e.getAction().equals(Action.RIGHT_CLICK_AIR)) {
                     sendArenaMessage(messages.lighting)
                     STRIKE_P()
                     return
                 }
             }
-            }
             e.isCancelled = true
 
+        if (e.currentItem.itemMeta.displayName == "Устроить шторм из камней") {
+            val player = e.whoClicked as Player
+            if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) || e.getAction().equals(Action.RIGHT_CLICK_AIR)) {
+                sendArenaMessage(messages.lighting)
+                Stone_Shtorm()
+                return
+            }
+
         }
-    //STRIKE
-    fun selectCTplayer(){
+        e.isCancelled = true
 
+        }
+    private fun Stone_Shtorm(){
+        val stone_shtorm: Thread = object : Thread() {
+            override fun run() {
+
+                object : BukkitRunnable() {
+                    override fun run() {
+                        if (PlayersAccept.size!= MinP){
+                            val player = PlayersCT as Player
+                            val l = player.location
+                            player.location.world.spawnFallingBlock(l, MaterialData(Material.STONE))
+                        }
+
+                    }//getPlugin<Zona>(Zona::class.java)
+                }.runTask(Zona.plugin)
+
+
+
+            }
+        }
+        stone_shtorm.start()
     }
-
     private fun STRIKE_P() {
         val strike_thr: Thread = object : Thread() {
             override fun run() {
 
-                    object : BukkitRunnable() {
-                        override fun run() {
-                            if (PlayersAccept.size != MinP){
-                                val player = PlayersCT as Player
-                                val l = player.location
-                                player.world.strikeLightning(l)
-                            }
+                object : BukkitRunnable() {
+                    override fun run() {
+                        if (PlayersAccept.size!= MinP){
+                            val player = PlayersCT as Player
+                            val l = player.location
+                            player.world.strikeLightning(l)
+                        }
 
-                        }//getPlugin<Zona>(Zona::class.java)
-                    }.runTask(Zona.plugin)
+                    }//getPlugin<Zona>(Zona::class.java)
+                }.runTask(Zona.plugin)
 
 
 
@@ -527,9 +568,11 @@ class Arena (nameA: String, val pos1: Location, val pos2: Location) : Listener {
         }
         strike_thr.start()
     }
+    //STRIKE
 
 
-    }
+}
+
 
 
 

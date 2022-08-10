@@ -1,10 +1,12 @@
 package ru.skyscx.minigames.events
 
+import com.google.common.eventbus.Subscribe
 import org.bukkit.Material
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.player.PlayerInteractEvent
@@ -58,5 +60,13 @@ object Events : Listener {
     fun ArenaEnd(event: ArenaEnd){
         Zona.instance?.system?.checkStartArena(event.Arena.sizeAll)
     }
+
+    @EventHandler
+    fun EnderGod(event: EntityDamageByEntityEvent) {
+        if (event.entity.type != EntityType.ENDERMAN) return
+        event.isCancelled = true
+    }
+
+
 
 }
